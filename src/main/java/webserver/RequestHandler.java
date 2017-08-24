@@ -1,14 +1,11 @@
 package webserver;
 
-import java.io.*;
-import java.net.Socket;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static java.nio.file.Files.readAllBytes;
+import java.io.*;
+import java.net.Socket;
+import java.nio.file.Files;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
@@ -31,36 +28,47 @@ public class RequestHandler extends Thread {
                 return;
             }
 
-            String[] reqTokens = line.split(" ");
+            byte[] body = makeBody(getRequestedUri(line));
+
             String mimeType = "text/html";
             while(!line.isEmpty()) {
                 log.debug(line);
                 line = reader.readLine();
-                if(line.startsWith("Accept: ")) {
-                    mimeType = line.substring("Accept: ".length()).split(",|;")[0].trim();
-                }
+                if(line.startsWith("Accept: ")) mimeType = getAcceptedContentType(line);
             }
 
             DataOutputStream dos = new DataOutputStream(out);
-            byte[] body = "Hello World".getBytes();
-
-            if(reqTokens != null && reqTokens.length > 1 && reqTokens[0].equals("GET")) {
-                String requestUri = "/index.html";
-                if(!reqTokens[1].equals("/")) {
-                    requestUri = reqTokens[1];
-                }
-
-                File f = new File("./webapp" + requestUri);
-                if(f.exists() && f.isFile()) {
-                    body = Files.readAllBytes(f.toPath());
-                }
-            }
-
             response200Header(dos, mimeType, body.length);
             responseBody(dos, body);
         } catch (IOException e) {
             log.error(e.getMessage());
         }
+    }
+
+    private String getRequestedUri(String reqLine) {
+        String uri = "/index.html";
+
+        String[] reqTokens = reqLine.split(" ");
+        if(!reqTokens[1].equals("/")) {
+            uri = reqTokens[1];
+        }
+
+        return uri;
+    }
+
+    private byte[] makeBody(String uri) throws IOException {
+        byte[] body = "Hello World".getBytes();
+
+        File f = new File("./webapp" + uri);
+        if(f.exists() && f.isFile()) {
+            body = Files.readAllBytes(f.toPath());
+        }
+
+        return body;
+    }
+
+    private String getAcceptedContentType(String headerLine) {
+        return headerLine.substring("Accept: ".length()).split(",|;")[0].trim();
     }
 
     private void response200Header(DataOutputStream dos, String mimeType, int lengthOfBodyContent) {
