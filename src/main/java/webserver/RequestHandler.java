@@ -1,11 +1,14 @@
 package webserver;
 
+import model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import util.HttpRequestUtils;
 
 import java.io.*;
 import java.net.Socket;
 import java.nio.file.Files;
+import java.util.Map;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
@@ -28,7 +31,17 @@ public class RequestHandler extends Thread {
                 return;
             }
 
-            byte[] body = makeBody(getRequestedUri(line));
+            String url = getRequestedUri(line);
+            int index = url.indexOf("?");
+            if(index > -1) {
+                String requestPath = url.substring(0, index);
+                String query = url.substring(index + 1);
+                if (requestPath.equals("/user/create")) {
+                    createUser(query);
+                }
+            }
+
+            byte[] body = makeBody(url);
 
             String mimeType = "text/html";
             while(!line.isEmpty()) {
@@ -43,6 +56,12 @@ public class RequestHandler extends Thread {
         } catch (IOException e) {
             log.error(e.getMessage());
         }
+    }
+
+    private void createUser(String query) {
+        Map<String, String> params = HttpRequestUtils.parseQueryString(query);
+        User user = new User(params.get("userId"), params.get("password"), params.get("name"), params.get("email"));
+        log.info("Saved user info:{}", user.toString());
     }
 
     private String getRequestedUri(String reqLine) {
