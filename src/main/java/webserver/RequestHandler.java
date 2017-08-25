@@ -4,6 +4,7 @@ import model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import util.HttpRequestUtils;
+import util.IOUtils;
 
 import java.io.*;
 import java.net.Socket;
@@ -32,24 +33,26 @@ public class RequestHandler extends Thread {
             }
 
             String url = getRequestedUri(line);
-            int index = url.indexOf("?");
-            if(index > -1) {
-                String requestPath = url.substring(0, index);
-                String query = url.substring(index + 1);
-                if (requestPath.equals("/user/create")) {
-                    createUser(query);
-                }
-            }
-
-            byte[] body = makeBody(url);
+            // request method 확인
+            String method = getRequestedMethod(line);
 
             String mimeType = "text/html";
+            int requestBodyLength = 0;
             while(!line.isEmpty()) {
                 log.debug(line);
                 line = reader.readLine();
                 if(line.startsWith("Accept: ")) mimeType = getAcceptedContentType(line);
+                // post인 경우 Content-Length 추출
+                if(line.startsWith("Content-Length: ")) requestBodyLength = getRequestBodyLength(line);
             }
 
+            if(method.equals("POST")) {
+                if (url.equals("/user/create")) {
+                    createUser(IOUtils.readData(reader, requestBodyLength));
+                }
+            }
+
+            byte[] body = makeBody(url);
             DataOutputStream dos = new DataOutputStream(out);
             response200Header(dos, mimeType, body.length);
             responseBody(dos, body);
@@ -58,10 +61,20 @@ public class RequestHandler extends Thread {
         }
     }
 
+    private int getRequestBodyLength(String headerLine) {
+        String contentLength = headerLine.split(" ")[1].trim();
+        return Integer.parseInt(contentLength);
+    }
+
     private void createUser(String query) {
         Map<String, String> params = HttpRequestUtils.parseQueryString(query);
         User user = new User(params.get("userId"), params.get("password"), params.get("name"), params.get("email"));
         log.info("Saved user info:{}", user.toString());
+    }
+
+    private String getRequestedMethod(String reqLine) {
+        String[] tokens = reqLine.split(" ");
+        return tokens[0];
     }
 
     private String getRequestedUri(String reqLine) {
