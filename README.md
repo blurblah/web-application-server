@@ -20,13 +20,17 @@
 * index.html 요청시 css 등의 resource 요청도 들어올 수 있는데 응답 header의 Content-Type을 맞춰주어야 함
 
 ### 요구사항 2 - get 방식으로 회원가입
-* 
+* GET 방식으로 form에서의 요청이 전달되면 url parameter로 입력값이 전달됨
 
 ### 요구사항 3 - post 방식으로 회원가입
-* 
+* POST 방식인 경우 form의 입력값이 body에 실려옴
+* body에 실릴 경우 header에 body의 길이가 Content-Length로 전달됨
+* header 읽은 후에 Content-Length 만큼만 BufferedReader로 읽으면 완료 
 
 ### 요구사항 4 - redirect 방식으로 이동
-* 
+* URL을 redirect로 보낼 때 header 응답은 302 Found
+* URL까지 변경하려면 Location을 header에 추가
+* Client(browser)가 받은 응답이 302인 경우 Location을 확인해 서버로 재요청함 
 
 ### 요구사항 5 - cookie
 * 
