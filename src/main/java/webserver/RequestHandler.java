@@ -1,5 +1,6 @@
 package webserver;
 
+import db.DataBase;
 import model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,6 +55,16 @@ public class RequestHandler extends Thread {
                     response302Header(dos, url);
                     return;
                 }
+
+                if(url.equals("/user/login")) {
+                    boolean loggedIn = loginUser(IOUtils.readData(reader, requestBodyLength));
+                    url = "/user/login_failed.html";
+                    if(loggedIn) {
+                        url = "/index.html";
+                    }
+                    response302HeaderWithCookie(dos, url, "logined=" + loggedIn);
+                    return;
+                }
             }
 
             byte[] body = makeBody(url);
@@ -69,10 +80,25 @@ public class RequestHandler extends Thread {
         return Integer.parseInt(contentLength);
     }
 
+    private boolean loginUser(String query) {
+        Map<String, String> params = HttpRequestUtils.parseQueryString(query);
+        String userId = params.get("userId");
+        String password = params.get("password");
+        log.info("Request to login id: {}", userId);
+
+        User user = DataBase.findUserById(userId);
+        if(user != null && password.equals(user.getPassword())) {
+            return true;
+        }
+
+        return false;
+    }
+
     private void createUser(String query) {
         Map<String, String> params = HttpRequestUtils.parseQueryString(query);
         User user = new User(params.get("userId"), params.get("password"), params.get("name"), params.get("email"));
-        log.info("Saved user info:{}", user.toString());
+        DataBase.addUser(user);
+        log.info("Created user info:{}", user.toString());
     }
 
     private String getRequestedMethod(String reqLine) {
@@ -120,6 +146,17 @@ public class RequestHandler extends Thread {
     private void response302Header(DataOutputStream dos, String location) {
         try {
             dos.writeBytes("HTTP/1.1 302 Found \r\n");
+            dos.writeBytes("Location: " + location + " \r\n");
+            dos.writeBytes("\r\n");
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+    }
+
+    private void response302HeaderWithCookie(DataOutputStream dos, String location, String cookie) {
+        try {
+            dos.writeBytes("HTTP/1.1 302 Found \r\n");
+            dos.writeBytes("Set-Cookie: " + cookie + " \r\n");
             dos.writeBytes("Location: " + location + " \r\n");
             dos.writeBytes("\r\n");
         } catch (IOException e) {

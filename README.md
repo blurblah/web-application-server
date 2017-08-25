@@ -33,7 +33,7 @@
 * Client(browser)가 받은 응답이 302인 경우 Location을 확인해 서버로 재요청함 
 
 ### 요구사항 5 - cookie
-* 
+* 응답 header에 Set-Cookie를 실어서 보내면 요청시 해당 값을 가진 Cookie가 header에 포함되어 요청됨
 
 ### 요구사항 6 - stylesheet 적용
 * 
