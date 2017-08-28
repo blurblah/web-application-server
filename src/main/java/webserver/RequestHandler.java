@@ -1,5 +1,6 @@
 package webserver;
 
+import com.google.common.collect.Maps;
 import db.DataBase;
 import model.User;
 import org.slf4j.Logger;
@@ -10,6 +11,7 @@ import util.IOUtils;
 import java.io.*;
 import java.net.Socket;
 import java.nio.file.Files;
+import java.util.Collection;
 import java.util.Map;
 
 public class RequestHandler extends Thread {
@@ -39,12 +41,14 @@ public class RequestHandler extends Thread {
 
             String mimeType = "text/html";
             int requestBodyLength = 0;
+            Map<String, String> cookie = Maps.newHashMap();
             while(!line.isEmpty()) {
                 log.debug(line);
                 line = reader.readLine();
                 if(line.startsWith("Accept: ")) mimeType = getAcceptedContentType(line);
                 // post인 경우 Content-Length 추출
                 if(line.startsWith("Content-Length: ")) requestBodyLength = getRequestBodyLength(line);
+                if(line.startsWith("Cookie: ")) cookie = HttpRequestUtils.parseCookies(line.substring("Cookie: ".length()));
             }
 
             DataOutputStream dos = new DataOutputStream(out);
@@ -54,9 +58,7 @@ public class RequestHandler extends Thread {
                     url = "/index.html";
                     response302Header(dos, url);
                     return;
-                }
-
-                if(url.equals("/user/login")) {
+                } else if(url.equals("/user/login")) {
                     boolean loggedIn = loginUser(IOUtils.readData(reader, requestBodyLength));
                     url = "/user/login_failed.html";
                     if(loggedIn) {
@@ -68,6 +70,33 @@ public class RequestHandler extends Thread {
             }
 
             byte[] body = makeBody(url);
+
+            if(url.equals("/user/list")) {
+                if(cookie.containsKey("logined") && Boolean.parseBoolean(cookie.get("logined"))) {
+                    // html 생성
+                    Collection<User> users = DataBase.findAll();
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("<table border=1>");
+                    sb.append("<th>User ID</th>");
+                    sb.append("<th>Name</th>");
+                    sb.append("<th>Email</th>");
+                    for(User user : users) {
+                        sb.append("<tr>");
+                        sb.append("<td>" + user.getUserId() + "</td>");
+                        sb.append("<td>" + user.getName() + "</td>");
+                        sb.append("<td>" + user.getEmail() + "</td>");
+                        sb.append("</tr>");
+                    }
+                    sb.append("</table>");
+                    body = sb.toString().getBytes();
+                    response200Header(dos, mimeType, body.length);
+                    responseBody(dos, body);
+                    return;
+                } else {
+                    response302Header(dos, "/user/login.html");
+                }
+            }
+
             response200Header(dos, mimeType, body.length);
             responseBody(dos, body);
         } catch (IOException e) {
