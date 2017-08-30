@@ -6,3 +6,6 @@
 /.idea
 *.iml
 .DS_Store
+Http_Response_Cookie.txt
+Http_Response_Forward.txt
+Http_Response_Redirect.txt
