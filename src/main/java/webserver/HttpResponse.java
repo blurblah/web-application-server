@@ -17,26 +17,34 @@ import java.util.Map;
 public class HttpResponse {
     private static final Logger log = LoggerFactory.getLogger(HttpResponse.class);
     private OutputStream out;
-    private Map<String, String> cookies;
+    private Map<String, String> headers;
 
     public HttpResponse(OutputStream out) {
         this.out = out;
-        this.cookies = Maps.newHashMap();
+        this.headers = Maps.newHashMap();
     }
 
     public void addHeader(String key, String value) {
-        this.cookies.put(key, value);
+        this.headers.put(key, value);
     }
 
     public void forward(String url) throws IOException {
-        this.out.write(makeHeader(200, this.cookies).getBytes());
-        this.out.write(makeBody(url));
+        byte[] body = makeBody(url);
+        forwardWithBody(body);
+    }
+
+    public void forwardWithBody(byte[] body) throws IOException {
+        addHeader("Content-Length", Integer.toString(body.length));
+        this.out.write(makeHeader(200, this.headers).getBytes());
+        this.out.write(body);
+        this.out.flush();
     }
 
     public void sendRedirect(String url) throws IOException {
         // send header
         addHeader("Location", url);
-        this.out.write(makeHeader(302, this.cookies).getBytes());
+        this.out.write(makeHeader(302, this.headers).getBytes());
+        this.out.flush();
     }
 
     private String makeHeader(int status, Map<String, String> cookies) {
