@@ -1,12 +1,9 @@
 package webserver;
 
-import com.google.common.collect.Maps;
 import db.DataBase;
 import model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import util.HttpRequestUtils;
-import util.IOUtils;
 
 import java.io.*;
 import java.net.Socket;
@@ -29,37 +26,23 @@ public class RequestHandler extends Thread {
 
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
-            BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-            String line = reader.readLine();
-            if(line == null) {
-                return;
-            }
-
-            String url = getRequestedUri(line);
-            // request method 확인
-            String method = getRequestedMethod(line);
-
-            String mimeType = "text/html";
-            int requestBodyLength = 0;
-            Map<String, String> cookie = Maps.newHashMap();
-            while(!line.isEmpty()) {
-                log.debug(line);
-                line = reader.readLine();
-                if(line.startsWith("Accept: ")) mimeType = getAcceptedContentType(line);
-                // post인 경우 Content-Length 추출
-                if(line.startsWith("Content-Length: ")) requestBodyLength = getRequestBodyLength(line);
-                if(line.startsWith("Cookie: ")) cookie = HttpRequestUtils.parseCookies(line.substring("Cookie: ".length()));
-            }
+            HttpRequest request = new HttpRequest(in);
+            String url = request.getPath();
+            String method = request.getMethod();
+            String mimeType = request.getHeader("Accept");
+            Map<String, String> cookies = request.getCookies();
 
             DataOutputStream dos = new DataOutputStream(out);
             if(method.equals("POST")) {
                 if (url.equals("/user/create")) {
-                    createUser(IOUtils.readData(reader, requestBodyLength));
+                    createUser(request.getParameter("userId"), request.getParameter("password"),
+                            request.getParameter("name"), request.getParameter("email"));
                     url = "/index.html";
                     response302Header(dos, url);
                     return;
                 } else if(url.equals("/user/login")) {
-                    boolean loggedIn = loginUser(IOUtils.readData(reader, requestBodyLength));
+                    boolean loggedIn = loginUser(request.getParameter("userId"),
+                            request.getParameter("password"));
                     url = "/user/login_failed.html";
                     if(loggedIn) {
                         url = "/index.html";
@@ -72,7 +55,7 @@ public class RequestHandler extends Thread {
             byte[] body = makeBody(url);
 
             if(url.equals("/user/list")) {
-                if(cookie.containsKey("logined") && Boolean.parseBoolean(cookie.get("logined"))) {
+                if(cookies.containsKey("logined") && Boolean.parseBoolean(cookies.get("logined"))) {
                     // html 생성
                     Collection<User> users = DataBase.findAll();
                     StringBuilder sb = new StringBuilder();
@@ -109,10 +92,7 @@ public class RequestHandler extends Thread {
         return Integer.parseInt(contentLength);
     }
 
-    private boolean loginUser(String query) {
-        Map<String, String> params = HttpRequestUtils.parseQueryString(query);
-        String userId = params.get("userId");
-        String password = params.get("password");
+    private boolean loginUser(String userId, String password) {
         log.info("Request to login id: {}", userId);
 
         User user = DataBase.findUserById(userId);
@@ -123,9 +103,8 @@ public class RequestHandler extends Thread {
         return false;
     }
 
-    private void createUser(String query) {
-        Map<String, String> params = HttpRequestUtils.parseQueryString(query);
-        User user = new User(params.get("userId"), params.get("password"), params.get("name"), params.get("email"));
+    private void createUser(String userId, String password, String name, String email) {
+        User user = new User(userId, password, name, email);
         DataBase.addUser(user);
         log.info("Created user info:{}", user.toString());
     }
@@ -148,6 +127,10 @@ public class RequestHandler extends Thread {
 
     private byte[] makeBody(String uri) throws IOException {
         byte[] body = "Hello World".getBytes();
+
+        if(uri.equals("/")) {
+            uri = "/index.html";
+        }
 
         File f = new File("./webapp" + uri);
         if(f.exists() && f.isFile()) {
