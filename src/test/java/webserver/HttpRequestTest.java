@@ -50,6 +50,7 @@ public class HttpRequestTest {
         assertEquals("localhost:8000", getRequest.getHeader("Host"));
         assertEquals("keep-alive", getRequest.getHeader("Connection"));
         assertEquals("*/*", getRequest.getHeader("Accept"));
+        assertEquals(true, Boolean.parseBoolean(getRequest.getCookies().get("logined")));
     }
 
     @Test
@@ -59,6 +60,7 @@ public class HttpRequestTest {
         assertEquals("45", postRequest.getHeader("Content-Length"));
         assertEquals("application/x-www-form-urlencoded", postRequest.getHeader("Content-Type"));
         assertEquals("*/*", postRequest.getHeader("Accept"));
+        assertEquals(false, Boolean.parseBoolean(postRequest.getCookies().get("logined")));
     }
 
     @Test

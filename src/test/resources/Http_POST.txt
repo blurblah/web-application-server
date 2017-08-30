@@ -3,6 +3,7 @@ Host: localhost:8000
 Connection: keep-alive
 Content-Length: 45
 Content-Type: application/x-www-form-urlencoded
+Cookie: logined=false
 Accept: */*
 
 userId=javajigi&password=password&name=tester

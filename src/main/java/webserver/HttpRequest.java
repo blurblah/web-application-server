@@ -20,6 +20,7 @@ public class HttpRequest {
     private String method;
     private String path;
     private Map<String, String> headers;
+    private Map<String, String> cookies;
     private Map<String, String> parameters;
 
     public HttpRequest(InputStream in) throws IOException {
@@ -54,10 +55,17 @@ public class HttpRequest {
     }
 
     private void parseHeader(String header) {
-        if(header != null && !header.isEmpty()) {
-            HttpRequestUtils.Pair p = HttpRequestUtils.parseHeader(header);
-            this.headers.put(p.getKey(), p.getValue());
+        if(header == null || header.isEmpty()) {
+            return;
         }
+
+        if(header.startsWith("Cookie: ")) {
+            this.cookies = HttpRequestUtils.parseCookies(header.substring("Cookie: ".length()));
+            return;
+        }
+
+        HttpRequestUtils.Pair p = HttpRequestUtils.parseHeader(header);
+        this.headers.put(p.getKey(), p.getValue());
     }
 
     public String getMethod() {
@@ -70,6 +78,10 @@ public class HttpRequest {
 
     public String getHeader(String field) {
         return this.headers.get(field);
+    }
+
+    public Map<String, String> getCookies() {
+        return cookies;
     }
 
     public String getParameter(String key) {
