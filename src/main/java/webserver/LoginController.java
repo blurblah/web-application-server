@@ -10,11 +10,15 @@ import java.io.IOException;
 /**
  * Created by sunchanlee on 2017. 8. 31..
  */
-public class LoginController implements Controller {
+public class LoginController extends AbstractController {
     private static final Logger log = LoggerFactory.getLogger(LoginController.class);
 
     @Override
-    public void service(HttpRequest request, HttpResponse response) throws IOException {
+    public void doGet(HttpRequest request, HttpResponse response) {
+    }
+
+    @Override
+    public void doPost(HttpRequest request, HttpResponse response) throws IOException {
         boolean loggedIn = loginUser(request.getParameter("userId"),
                 request.getParameter("password"));
         String url = "/user/login_failed.html";

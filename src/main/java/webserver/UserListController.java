@@ -10,10 +10,10 @@ import java.util.Map;
 /**
  * Created by sunchanlee on 2017. 8. 31..
  */
-public class UserListController implements Controller {
+public class UserListController extends AbstractController {
 
     @Override
-    public void service(HttpRequest request, HttpResponse response) throws IOException {
+    public void doGet(HttpRequest request, HttpResponse response) throws IOException {
         Map<String, String> cookies = request.getCookies();
         String mimeType = request.getHeader("Accept");
         if(cookies.containsKey("logined") && Boolean.parseBoolean(cookies.get("logined"))) {
@@ -22,6 +22,10 @@ public class UserListController implements Controller {
         } else {
             response.sendRedirect("/user/login.html");
         }
+    }
+
+    @Override
+    public void doPost(HttpRequest request, HttpResponse response) throws IOException {
     }
 
     private String makeUserList() {

@@ -1,5 +1,6 @@
 package webserver;
 
+import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -7,15 +8,24 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.Map;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
 
     private Socket connection;
-    private Controller controller;
+    private Map<String, Controller> controllerMap;
 
     public RequestHandler(Socket connectionSocket) {
         this.connection = connectionSocket;
+        initControllerMap();
+    }
+
+    private void initControllerMap() {
+        this.controllerMap = Maps.newHashMap();
+        this.controllerMap.put("/user/create", new CreateUserController());
+        this.controllerMap.put("/user/login", new LoginController());
+        this.controllerMap.put("/user/list", new UserListController());
     }
 
     public void run() {
@@ -25,28 +35,16 @@ public class RequestHandler extends Thread {
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             HttpRequest request = new HttpRequest(in);
             String url = request.getPath();
-            String method = request.getMethod();
             HttpResponse response = new HttpResponse(out);
 
-            if(method.equals("POST")) {
-                if (url.equals("/user/create")) {
-                    controller = new CreateUserController();
-                    controller.service(request, response);
-                    return;
-                } else if(url.equals("/user/login")) {
-                    controller = new LoginController();
-                    controller.service(request, response);
-                    return;
-                }
+            Controller controller = this.controllerMap.get(url);
+            if(controller != null) {
+                controller.service(request, response);
+                return;
             }
 
-            if(url.equals("/user/list")) {
-                controller = new UserListController();
-                controller.service(request, response);
-            } else {
-                response.addHeader("Content-Type", request.getHeader("Accept"));
-                response.forward(url);
-            }
+            response.addHeader("Content-Type", request.getHeader("Accept"));
+            response.forward(url);
         } catch (IOException e) {
             log.error(e.getMessage());
         }
