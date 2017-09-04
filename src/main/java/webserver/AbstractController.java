@@ -9,8 +9,8 @@ public abstract class AbstractController implements Controller {
 
     @Override
     public void service(HttpRequest request, HttpResponse response) throws IOException {
-        String method = request.getMethod();
-        if(method.equals("POST")) {
+        HttpMethod method = request.getMethod();
+        if(method == HttpMethod.POST) {
             doPost(request, response);
         } else {
             doGet(request, response);

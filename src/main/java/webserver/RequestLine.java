@@ -10,7 +10,7 @@ import java.util.Map;
  */
 public class RequestLine {
 
-    private String method;
+    private HttpMethod method;
     private String path;
     private Map<String, String> params;
 
@@ -18,7 +18,7 @@ public class RequestLine {
         this.params = new HashMap<String, String>();
 
         String[] requestTokens = line.split(" ");
-        this.method = requestTokens[0];
+        this.method = HttpMethod.valueOf(requestTokens[0]);
         this.path = requestTokens[1];
         int parameterIndex = requestTokens[1].indexOf("?");
         if(parameterIndex > -1) {
@@ -28,7 +28,7 @@ public class RequestLine {
         }
     }
 
-    public String getMethod() {
+    public HttpMethod getMethod() {
         return method;
     }
 

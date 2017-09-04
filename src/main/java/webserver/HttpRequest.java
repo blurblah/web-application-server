@@ -17,7 +17,7 @@ import java.util.Map;
  */
 public class HttpRequest {
     private static final Logger log = LoggerFactory.getLogger(HttpRequest.class);
-    private String method;
+    private HttpMethod method;
     private String path;
     private Map<String, String> headers;
     private Map<String, String> cookies;
@@ -63,7 +63,7 @@ public class HttpRequest {
         this.headers.put(p.getKey(), p.getValue());
     }
 
-    public String getMethod() {
+    public HttpMethod getMethod() {
         return this.method;
     }
 

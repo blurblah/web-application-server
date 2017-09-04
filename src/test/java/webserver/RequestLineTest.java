@@ -5,7 +5,7 @@ import org.junit.Test;
 
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Created by sunchanlee on 2017. 9. 4..
@@ -23,8 +23,8 @@ public class RequestLineTest {
 
     @Test
     public void getMethod() throws Exception {
-        assertEquals("GET", requestLine.getMethod());
-        assertEquals("GET", requestLineWithParams.getMethod());
+        assertEquals(HttpMethod.GET, requestLine.getMethod());
+        assertEquals(HttpMethod.GET, requestLineWithParams.getMethod());
     }
 
     @Test
