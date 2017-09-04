@@ -1,6 +1,5 @@
 package webserver;
 
-import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -8,24 +7,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.util.Map;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
-
     private Socket connection;
-    private Map<String, Controller> controllerMap;
 
     public RequestHandler(Socket connectionSocket) {
         this.connection = connectionSocket;
-        initControllerMap();
-    }
-
-    private void initControllerMap() {
-        this.controllerMap = Maps.newHashMap();
-        this.controllerMap.put("/user/create", new CreateUserController());
-        this.controllerMap.put("/user/login", new LoginController());
-        this.controllerMap.put("/user/list", new UserListController());
     }
 
     public void run() {
@@ -37,7 +25,7 @@ public class RequestHandler extends Thread {
             String url = request.getPath();
             HttpResponse response = new HttpResponse(out);
 
-            Controller controller = this.controllerMap.get(url);
+            Controller controller = RequestMapping.getController(url);
             if(controller != null) {
                 controller.service(request, response);
                 return;
