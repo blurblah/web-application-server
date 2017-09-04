@@ -31,15 +31,10 @@ public class HttpRequest {
         String line = reader.readLine();
         if(line == null) return;
 
-        String[] requestTokens = line.split(" ");
-        this.method = requestTokens[0];
-        this.path = requestTokens[1];
-        int parameterIndex = requestTokens[1].indexOf("?");
-        if(parameterIndex > -1) {
-            this.path = requestTokens[1].substring(0, parameterIndex);
-            this.parameters = HttpRequestUtils.parseQueryString(
-                    requestTokens[1].substring(parameterIndex + 1));
-        }
+        RequestLine requestLine = new RequestLine(line);
+        this.method = requestLine.getMethod();
+        this.path = requestLine.getPath();
+        this.parameters = requestLine.getParams();
 
         while(line != null && !line.isEmpty()) {
             log.debug(line);
