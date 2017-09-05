@@ -4,6 +4,7 @@ import db.DataBase;
 import model.User;
 import webserver.HttpRequest;
 import webserver.HttpResponse;
+import webserver.HttpSession;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -16,9 +17,9 @@ public class UserListController extends AbstractController {
 
     @Override
     public void doGet(HttpRequest request, HttpResponse response) throws IOException {
-        Map<String, String> cookies = request.getCookies();
+        HttpSession session = request.getSession();
         String mimeType = request.getHeader("Accept");
-        if(cookies.containsKey("logined") && Boolean.parseBoolean(cookies.get("logined"))) {
+        if(session.getAttribute("user") != null) {
             response.addHeader("Content-Type", mimeType);
             response.forwardWithBody(makeUserList().getBytes());
         } else {

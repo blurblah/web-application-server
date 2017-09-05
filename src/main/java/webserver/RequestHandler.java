@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.Map;
+import java.util.UUID;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
@@ -25,6 +27,11 @@ public class RequestHandler extends Thread {
             HttpRequest request = new HttpRequest(in);
             String url = request.getPath();
             HttpResponse response = new HttpResponse(out);
+
+            Map<String, String> cookies = request.getCookies();
+            if(cookies.get("JSESSIONID") == null) {
+                response.addHeader("Set-Cookie", UUID.randomUUID().toString());
+            }
 
             Controller controller = RequestMapping.getController(url);
             if(controller != null) {

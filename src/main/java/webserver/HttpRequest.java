@@ -82,4 +82,8 @@ public class HttpRequest {
     public String getParameter(String key) {
         return this.parameters.get(key);
     }
+
+    public HttpSession getSession() {
+        return HttpSessions.getSession(getCookies().get("JSESSIONID"));
+    }
 }

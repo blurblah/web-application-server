@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import webserver.HttpRequest;
 import webserver.HttpResponse;
+import webserver.HttpSession;
 
 import java.io.IOException;
 
@@ -21,24 +22,16 @@ public class LoginController extends AbstractController {
 
     @Override
     public void doPost(HttpRequest request, HttpResponse response) throws IOException {
-        boolean loggedIn = loginUser(request.getParameter("userId"),
-                request.getParameter("password"));
+        User user = DataBase.findUserById(request.getParameter("userId"));
         String url = "/user/login_failed.html";
-        if(loggedIn) {
+        HttpSession session = request.getSession();
+
+        // login check
+        if(user.getPassword().equals(request.getParameter("password"))) {
             url = "/index.html";
+            session.setAttribute("user", user);
         }
-        response.addHeader("Set-Cookie", "logined=" + loggedIn);
+
         response.sendRedirect(url);
-    }
-
-    private boolean loginUser(String userId, String password) {
-        log.info("Request to login id: {}", userId);
-
-        User user = DataBase.findUserById(userId);
-        if(user != null && password.equals(user.getPassword())) {
-            return true;
-        }
-
-        return false;
     }
 }
